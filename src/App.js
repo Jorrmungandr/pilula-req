@@ -1,26 +1,54 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { Component } from 'react';
+import { gel, axiosGet, axiosPost } from './global/func';
+import { withCookies } from 'react-cookie';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.state = {
+      resposta: {},
+    };
+  }
 
-export default App;
+  handleSubmit(event) {
+    event.preventDefault();
+    axiosPost('/login', {
+      user: this.username.value,
+      password: this.password.value,
+    }, (res) => {
+      if (res.data.status === 200) {
+        const { cookies } = this.props;
+        cookies.set('token', res.data.token, { path: '/' });
+      } else {
+        console.log(res);
+        alert(res.data.error);
+      }
+    });
+  }
+
+  componentDidMount() {
+    axiosGet('/json', this, 'resposta');
+  }
+
+  render() {
+    const { resposta } = this.state;
+    return (
+      <section className="app">
+        <form onSubmit={this.handleSubmit} >
+          <input ref={(u) => {this.username = u}} type="text" name="user" id="user"/>
+          <input ref={(p) => {this.password = p}} type="password" name="password" id="password"/>
+          <button>Entrar</button>
+        </form>
+        <div className="res-container">
+          {resposta.key && resposta.key.map((valor) => (
+            <p>{valor}</p>
+          ))}
+        </div>
+      </section>
+    );
+  }
+};
+
+export default withCookies(App);
